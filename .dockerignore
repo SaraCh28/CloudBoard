@@ -1,0 +1,17 @@
+# .dockerignore
+node_modules
+npm-debug.log
+.git
+.gitignore
+.vscode
+Dockerfile
+*.md
+*.yml
+*.yaml
+Dockerfile
+docker-compose.yml
+**/test*
+**/__tests__
+**/*.spec.js
+**/*.test.js
+src
