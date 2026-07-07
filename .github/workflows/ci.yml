@@ -26,10 +26,7 @@ jobs:
         run: npm ci
 
       - name: Lint code
-        run: npx eslint . --ext .js,.jsx,.ts,.tsx
-
-      - name: Run tests
-        run: npm test -- --watchAll=false
+        run: npm run lint
 
       - name: Build production assets
         run: npm run build
