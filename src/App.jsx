@@ -4,6 +4,7 @@ import KanbanBoard from "./components/KanbanBoard"
 import Analytics from "./components/Analytics"
 import NotificationCenter from "./components/NotificationCenter"
 import SettingsRBAC from "./components/SettingsRBAC"
+import { getTasks, createTask, updateTask as apiUpdateTask, deleteTask as apiDeleteTask } from "./lib/api"
 import { 
   LayoutDashboard,
   Kanban,
@@ -23,107 +24,27 @@ const initialUsers = [
   { id: "4", name: "Fatima", role: "Manager" }
 ]
 
-const initialTasks = [
-  {
-    id: "PHX-101",
-    title: "Implement JWT Authentication Middleware",
-    description: "Create secure authentication endpoints, sign and verify JWT tokens. Save tokens in HTTP-only cookies and implement middleware routing checks.",
-    status: "Doing",
-    priority: "High",
-    assigneeId: "2",
-    estimatedHours: 24,
-    actualHours: 12,
-    labels: ["Backend", "Auth", "Security"],
-    subtasks: [
-      { id: 1, title: "Create JWT token helpers", isCompleted: true },
-      { id: 2, title: "Write express validation middleware", isCompleted: false },
-      { id: 3, title: "Setup HTTP-only cookie delivery", isCompleted: false }
-    ],
-    comments: [
-      { id: 1, author: "Sara", content: "Need this to be fully compliant with OWASP guidelines.", created_at: "7/6/2026, 4:10 PM" }
-    ]
-  },
-  {
-    id: "PHX-102",
-    title: "Fix Login Session Expiration Bug",
-    description: "Users report getting randomly logged out when changing tabs. Potentially related to localStorage cache clear triggers.",
-    status: "Todo",
-    priority: "Urgent",
-    assigneeId: "2",
-    estimatedHours: 16,
-    actualHours: 0,
-    labels: ["Bug", "Frontend"],
-    subtasks: [
-      { id: 1, title: "Isolate tab trigger code", isCompleted: false }
-    ],
-    comments: []
-  },
-  {
-    id: "PHX-103",
-    title: "Design Payment Gateway Schema Migration",
-    description: "Design relational schema tables for Stripe customer references, invoices, and payment intents. Must execute zero-downtime migrations.",
-    status: "Todo",
-    priority: "High",
-    assigneeId: "3",
-    estimatedHours: 8,
-    actualHours: 0,
-    labels: ["Database", "Backend"],
-    subtasks: [],
-    comments: []
-  },
-  {
-    id: "PHX-104",
-    title: "Configure Prometheus metrics exporter",
-    description: "Expose metrics route `/metrics` in FastAPI application and integrate Prometheus tracking daemon for latency checks.",
-    status: "Done",
-    priority: "Medium",
-    assigneeId: "3",
-    estimatedHours: 12,
-    actualHours: 14,
-    labels: ["Monitoring", "Ops"],
-    subtasks: [
-      { id: 1, title: "Install prometheus_client library", isCompleted: true },
-      { id: 2, title: "Configure mid-level latency recorder", isCompleted: true }
-    ],
-    comments: []
-  },
-  {
-    id: "PHX-105",
-    title: "Refactor User Preference Dashboard Layout",
-    description: "Re-align profile panels to fit the new theme system. Clean up legacy CSS utilities.",
-    status: "Todo",
-    priority: "Low",
-    assigneeId: "4",
-    estimatedHours: 6,
-    actualHours: 0,
-    labels: ["Frontend", "UI"],
-    subtasks: [],
-    comments: []
-  }
-]
-
 const initialLogs = [
-  { id: 1, type: "system", message: "CloudBoard initialized with seed data.", timestamp: "7/6/2026, 4:00 PM" }
+  { id: 1, type: "system", message: "CloudBoard initialized.", timestamp: "7/6/2026, 4:00 PM" }
 ]
 
 export default function App() {
   const [tab, setTab] = useState("dashboard")
   const [currentRole, setCurrentRole] = useState("Owner")
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [tasks, setTasks] = useState(() => {
-    const saved = localStorage.getItem("CLOUDBOARD_TASKS")
-    return saved ? JSON.parse(saved) : initialTasks
-  })
+  const [tasks, setTasks] = useState([])
   const [users, setUsers] = useState(initialUsers)
   const [notificationLogs, setNotificationLogs] = useState(() => {
     const saved = localStorage.getItem("CLOUDBOARD_LOGS")
     return saved ? JSON.parse(saved) : initialLogs
   })
-
-  // Persist to localStorage
+  
+  // Fetch tasks from API on mount
   useEffect(() => {
-    localStorage.setItem("CLOUDBOARD_TASKS", JSON.stringify(tasks))
-  }, [tasks])
+    getTasks()
+      .then(data => setTasks(data))
+      .catch(err => console.error("Failed to load tasks:", err))
+  }, [])
 
   useEffect(() => {
     localStorage.setItem("CLOUDBOARD_LOGS", JSON.stringify(notificationLogs))
@@ -135,14 +56,24 @@ export default function App() {
   }
 
   // Task CRUD helpers
-  const addTask = (taskData) => {
+  const addTask = async (taskData) => {
     const newId = `PHX-${Math.floor(100 + Math.random() * 900)}`
     const newTask = { id: newId, actualHours: 0, subtasks: [], comments: [], ...taskData }
+    
+    // Optimistic UI update
     setTasks(prev => [newTask, ...prev])
     addNotificationLog("task_created", `Created new task: ${newId}`)
+    
+    try {
+      await createTask(newTask)
+    } catch (err) {
+      console.error(err)
+      // Rollback would go here in a production app
+    }
   }
 
-  const updateTask = (id, updatedFields) => {
+  const updateTask = async (id, updatedFields) => {
+    // Optimistic update
     setTasks(prev => prev.map(t => {
       if (t.id === id) {
         if (updatedFields.status && updatedFields.status !== t.status) {
@@ -156,11 +87,24 @@ export default function App() {
       }
       return t
     }))
+    
+    try {
+      await apiUpdateTask(id, updatedFields)
+    } catch (err) {
+      console.error(err)
+    }
   }
 
-  const deleteTask = (id) => {
+  const deleteTask = async (id) => {
+    // Optimistic update
     setTasks(prev => prev.filter(t => t.id !== id))
     addNotificationLog("task_deleted", `Deleted task ${id}`)
+    
+    try {
+      await apiDeleteTask(id)
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   return (

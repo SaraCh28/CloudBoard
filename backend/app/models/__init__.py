@@ -3,6 +3,7 @@
 from app.models.user import User
 from app.models.organization import Organization, OrganizationMember, Invitation, OrgRole, InvitationStatus
 from app.models.project import Project
+from app.models.task import Task
 
 __all__ = [
     "User",
@@ -12,4 +13,5 @@ __all__ = [
     "OrgRole",
     "InvitationStatus",
     "Project",
+    "Task",
 ]

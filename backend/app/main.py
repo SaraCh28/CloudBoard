@@ -13,9 +13,10 @@ from app.config import get_settings
 from app.database import engine, Base
 from app.routers.auth import router as auth_router
 from app.routers.organizations import router as org_router
+from app.routers.tasks import router as tasks_router
 
 # Import all models so SQLAlchemy registers them
-from app.models import User, Organization, OrganizationMember, Invitation, Project  # noqa: F401
+from app.models import User, Organization, OrganizationMember, Invitation, Project, Task  # noqa: F401
 
 settings = get_settings()
 
@@ -53,6 +54,7 @@ app.add_middleware(
 # ── Routers ──────────────────────────────────────────────────────
 app.include_router(auth_router)
 app.include_router(org_router)
+app.include_router(tasks_router)
 
 
 # ── Health check ─────────────────────────────────────────────────
