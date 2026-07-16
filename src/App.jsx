@@ -4,6 +4,7 @@ import KanbanBoard from "./components/KanbanBoard"
 import Analytics from "./components/Analytics"
 import NotificationCenter from "./components/NotificationCenter"
 import SettingsRBAC from "./components/SettingsRBAC"
+import GlobalSearch from "./components/GlobalSearch"
 import { getTasks, createTask, updateTask as apiUpdateTask, deleteTask as apiDeleteTask } from "./lib/api"
 import { 
   LayoutDashboard,
@@ -138,10 +139,14 @@ export default function App() {
             <button className="btn btn-secondary" aria-label="Toggle navigation" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ display: "flex", alignItems: "center" }}>
               <Menu size={16} />
             </button>
-            <span className="topbar-title">RentNGo v2</span>
+            <span className="topbar-title">CloudBoard</span>
             <span style={{ fontSize: "0.75rem", padding: "2px 6px", border: "1px solid var(--border-color)", borderRadius: "10px", color: "var(--text-secondary)" }}>Sprint 12 (Active)</span>
           </div>
           <div className="topbar-actions">
+            <GlobalSearch onNavigate={(hit) => {
+              if (hit.type === "task") setTab("kanban")
+              else if (hit.type === "project") setTab("dashboard")
+            }} />
             <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "6px" }}>
               Role: <span className="task-priority-badge priority-low" style={{ margin: 0, textTransform: "uppercase", fontWeight: "700" }}>{currentRole}</span>
             </span>

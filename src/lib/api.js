@@ -2,7 +2,7 @@
  * CloudBoard API Client
  */
 
-const API_BASE = "http://localhost:8000/api/v1";
+const API_BASE = "http://localhost:8005/api/v1";
 
 export const getTasks = async () => {
   const response = await fetch(`${API_BASE}/tasks`);

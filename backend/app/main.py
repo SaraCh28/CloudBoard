@@ -14,6 +14,7 @@ from app.database import engine, Base
 from app.routers.auth import router as auth_router
 from app.routers.organizations import router as org_router
 from app.routers.tasks import router as tasks_router
+from app.routers.search import router as search_router
 
 # Import all models so SQLAlchemy registers them
 from app.models import User, Organization, OrganizationMember, Invitation, Project, Task  # noqa: F401
@@ -36,7 +37,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    description="Engineering Intelligence Platform – Authentication & Organization Service",
+    description="Engineering Intelligence Platform – Auth, Organizations, Tasks & Search",
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
@@ -55,6 +56,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(org_router)
 app.include_router(tasks_router)
+app.include_router(search_router)
 
 
 # ── Health check ─────────────────────────────────────────────────
