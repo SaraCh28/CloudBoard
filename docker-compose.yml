@@ -13,7 +13,7 @@ services:
       POSTGRES_PASSWORD: cloudboard
       POSTGRES_DB: cloudboard
     ports:
-      - "5432:5432"
+      - "5435:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -27,7 +27,7 @@ services:
     image: redis:7-alpine
     container_name: cloudboard-redis
     ports:
-      - "6379:6379"
+      - "6381:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -41,7 +41,7 @@ services:
       dockerfile: Dockerfile
     container_name: cloudboard-api
     ports:
-      - "8000:8000"
+      - "8005:8000"
     environment:
       DATABASE_URL: postgresql+asyncpg://cloudboard:cloudboard@postgres:5432/cloudboard
       REDIS_URL: redis://redis:6379/0
