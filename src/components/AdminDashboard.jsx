@@ -174,10 +174,34 @@ export default function AdminDashboard() {
 
             <div style={{ display: "flex", justifyContent: "space-between", padding: "10px", background: "rgba(255,255,255,0.03)", borderRadius: "6px" }}>
               <div>
-                <div style={{ fontWeight: "600", fontSize: "0.9rem" }}>Prometheus Exporter</div>
+                <div style={{ fontWeight: "600", fontSize: "0.9rem" }}>GraphQL Gateway (Module 7)</div>
+                <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>Strawberry Schema & GraphiQL IDE: /graphql</div>
+              </div>
+              <a href="http://localhost:8005/graphql" target="_blank" rel="noreferrer" style={{ fontSize: "0.8rem", color: "var(--accent-gold)", alignSelf: "center", textDecoration: "underline" }}>Open GraphiQL</a>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "10px", background: "rgba(255,255,255,0.03)", borderRadius: "6px" }}>
+              <div>
+                <div style={{ fontWeight: "600", fontSize: "0.9rem" }}>Cache-Aside & Rate Limiting (Module 13)</div>
+                <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>Sliding Window Token Bucket (120 req/min)</div>
+              </div>
+              <span className="task-priority-badge priority-low" style={{ background: "rgba(34, 197, 94, 0.15)", color: "#4ADE80" }}>ENFORCED</span>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "10px", background: "rgba(255,255,255,0.03)", borderRadius: "6px" }}>
+              <div>
+                <div style={{ fontWeight: "600", fontSize: "0.9rem" }}>Security Hardening (Module 16)</div>
+                <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>X-Frame-Options / CSP / XSS Sanitizer</div>
+              </div>
+              <span className="task-priority-badge priority-low" style={{ background: "rgba(34, 197, 94, 0.15)", color: "#4ADE80" }}>HARDENED</span>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "10px", background: "rgba(255,255,255,0.03)", borderRadius: "6px" }}>
+              <div>
+                <div style={{ fontWeight: "600", fontSize: "0.9rem" }}>Prometheus Telemetry</div>
                 <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>Endpoint: /api/v1/system/metrics</div>
               </div>
-              <a href="http://localhost:8005/api/v1/system/metrics" target="_blank" rel="noreferrer" style={{ fontSize: "0.8rem", color: "var(--accent-gold)", alignSelf: "center", textDecoration: "underline" }}>View Raw</a>
+              <a href="http://localhost:8005/api/v1/system/metrics" target="_blank" rel="noreferrer" style={{ fontSize: "0.8rem", color: "var(--accent-gold)", alignSelf: "center", textDecoration: "underline" }}>View Raw Metrics</a>
             </div>
           </div>
         </div>

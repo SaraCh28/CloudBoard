@@ -18,6 +18,10 @@ python-multipart==0.0.20
 # Redis
 redis[hiredis]==6.2.0
 
+# GraphQL
+strawberry-graphql==0.323.2
+
 # CORS & Utils
 httpx==0.28.1
 python-dotenv==1.1.1
+

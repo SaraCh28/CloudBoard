@@ -26,9 +26,11 @@ def record_request(is_error: bool = False):
         request_counter["errors"] += 1
 
 
+from app.services.cache import cache_service
+
 @router.get("/health")
 async def detailed_health_check(db: AsyncSession = Depends(get_db)):
-    """Comprehensive system health report checking DB, Memory, and Services."""
+    """Comprehensive system health report checking DB, Memory, Services, and Caching."""
     db_status = "healthy"
     db_latency_ms = 0.0
     
@@ -57,8 +59,13 @@ async def detailed_health_check(db: AsyncSession = Depends(get_db)):
                 "status": "healthy",
                 "active_connections": len(manager.active_connections)
             },
-            "task_search_index": {
-                "status": "healthy"
+            "graphql_gateway": {
+                "status": "healthy",
+                "endpoint": "/graphql"
+            },
+            "cache_layer": {
+                "status": "healthy",
+                "stats": cache_service.get_stats()
             }
         },
         "system_resources": {

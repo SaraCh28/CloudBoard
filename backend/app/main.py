@@ -79,6 +79,14 @@ uploads_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads"
 os.makedirs(uploads_dir, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 
+from app.routers.graphql import graphql_app
+from app.middleware.rate_limit import RateLimitMiddleware
+from app.middleware.security import SecurityHeadersMiddleware
+
+# ── Middleware: Security & Rate Limiting ─────────────────────────
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RateLimitMiddleware, max_requests=120, window_seconds=60)
+
 # ── Routers ──────────────────────────────────────────────────────
 app.include_router(auth_router)
 app.include_router(org_router)
@@ -87,6 +95,7 @@ app.include_router(search_router)
 app.include_router(websocket_router)
 app.include_router(attachments_router)
 app.include_router(system_router)
+app.include_router(graphql_app, prefix="/graphql")
 
 
 # ── Health check ─────────────────────────────────────────────────
@@ -98,4 +107,5 @@ async def health_check():
         "version": settings.APP_VERSION,
         "environment": settings.ENVIRONMENT,
     }
+
 
