@@ -5,7 +5,9 @@ import Analytics from "./components/Analytics"
 import NotificationCenter from "./components/NotificationCenter"
 import SettingsRBAC from "./components/SettingsRBAC"
 import GlobalSearch from "./components/GlobalSearch"
+import AdminDashboard from "./components/AdminDashboard"
 import { getTasks, createTask, updateTask as apiUpdateTask, deleteTask as apiDeleteTask } from "./lib/api"
+import { wsClient } from "./lib/websocket"
 import { 
   LayoutDashboard,
   Kanban,
@@ -14,7 +16,9 @@ import {
   Settings,
   ShieldAlert,
   Server,
-  Menu
+  Menu,
+  Activity,
+  Radio
 } from "lucide-react"
 
 // Robust initial seed data
@@ -35,16 +39,30 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [tasks, setTasks] = useState([])
   const [users, setUsers] = useState(initialUsers)
+  const [wsConnected, setWsConnected] = useState(false)
   const [notificationLogs, setNotificationLogs] = useState(() => {
     const saved = localStorage.getItem("CLOUDBOARD_LOGS")
     return saved ? JSON.parse(saved) : initialLogs
   })
   
-  // Fetch tasks from API on mount
+  // Fetch tasks from API and establish WebSocket on mount
   useEffect(() => {
     getTasks()
       .then(data => setTasks(data))
       .catch(err => console.error("Failed to load tasks:", err))
+
+    wsClient.connect("1", "Sara")
+    const unsubscribeStatus = wsClient.onStatusChange((status) => setWsConnected(status))
+    const unsubscribeWS = wsClient.subscribe((msg) => {
+      if (msg.type === "TASK_UPDATED") {
+        addNotificationLog("ws_event", `Live update received from ${msg.sender}: Task updated`)
+      }
+    })
+
+    return () => {
+      unsubscribeStatus()
+      unsubscribeWS()
+    }
   }, [])
 
   useEffect(() => {
@@ -64,12 +82,14 @@ export default function App() {
     // Optimistic UI update
     setTasks(prev => [newTask, ...prev])
     addNotificationLog("task_created", `Created new task: ${newId}`)
+
+    // Broadcast WS event
+    wsClient.send({ type: "TASK_CREATED", payload: newTask })
     
     try {
       await createTask(newTask)
     } catch (err) {
       console.error(err)
-      // Rollback would go here in a production app
     }
   }
 
@@ -88,6 +108,9 @@ export default function App() {
       }
       return t
     }))
+
+    // Broadcast WS update
+    wsClient.send({ type: "TASK_UPDATED", payload: { id, ...updatedFields } })
     
     try {
       await apiUpdateTask(id, updatedFields)
@@ -100,6 +123,8 @@ export default function App() {
     // Optimistic update
     setTasks(prev => prev.filter(t => t.id !== id))
     addNotificationLog("task_deleted", `Deleted task ${id}`)
+
+    wsClient.send({ type: "TASK_DELETED", payload: { id } })
     
     try {
       await apiDeleteTask(id)
@@ -121,12 +146,13 @@ export default function App() {
           <li><div className={`menu-item ${tab === "kanban" ? "active" : ""}`} onClick={() => setTab("kanban")}><Kanban size={18} /><span>Kanban Board</span></div></li>
           <li><div className={`menu-item ${tab === "analytics" ? "active" : ""}`} onClick={() => setTab("analytics")}><BarChart3 size={18} /><span>Analytics</span></div></li>
           <li><div className={`menu-item ${tab === "notifications" ? "active" : ""}`} onClick={() => setTab("notifications")}><BellRing size={18} /><span>Notifications</span></div></li>
+          <li><div className={`menu-item ${tab === "admin" ? "active" : ""}`} onClick={() => setTab("admin")}><Activity size={18} /><span>System Admin</span></div></li>
           <li><div className={`menu-item ${tab === "settings" ? "active" : ""}`} onClick={() => setTab("settings")}><Settings size={18} /><span>Settings & RBAC</span></div></li>
         </ul>
         <div className="sidebar-footer">
           <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.8rem", color: "var(--text-secondary)" }}>
-            <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "var(--accent-green)" }} />
-            <span>Dev Server Local</span>
+            <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: wsConnected ? "var(--accent-green)" : "#F59E0B" }} />
+            <span>{wsConnected ? "WebSocket Live" : "Dev Server Local"}</span>
           </div>
         </div>
       </aside>
@@ -157,9 +183,11 @@ export default function App() {
           {tab === "kanban" && <KanbanBoard tasks={tasks} users={users} addTask={addTask} updateTask={updateTask} deleteTask={deleteTask} currentRole={currentRole} addNotificationLog={addNotificationLog} />}
           {tab === "analytics" && <Analytics tasks={tasks} />}
           {tab === "notifications" && <NotificationCenter notificationLogs={notificationLogs} />}
+          {tab === "admin" && <AdminDashboard />}
           {tab === "settings" && <SettingsRBAC currentRole={currentRole} setCurrentRole={setCurrentRole} addNotificationLog={addNotificationLog} />}
         </main>
       </div>
     </div>
   )
 }
+

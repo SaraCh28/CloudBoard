@@ -14,9 +14,13 @@ import {
   X,
   PlusCircle,
   ArrowRight,
-  TrendingDown
+  TrendingDown,
+  Paperclip,
+  UploadCloud
 } from "lucide-react";
 import { getAiTaskEstimation, getAiDuplicateCheck } from "../lib/gemini";
+import { uploadAttachment, getTaskAttachments } from "../lib/api";
+
 
 export default function KanbanBoard({ 
   tasks, 
@@ -650,6 +654,49 @@ export default function KanbanBoard({
                         setSelectedTask({ ...selectedTask, actualHours: hrs });
                       }}
                     />
+                  </div>
+
+                  {/* Module 9: File Attachments Section */}
+                  <div className="form-group" style={{ marginTop: "16px" }}>
+                    <label className="form-label" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <Paperclip size={14} color="var(--accent-gold)" /> Task Attachments
+                    </label>
+                    
+                    <div style={{ fontSize: "0.8rem", display: "flex", flexDirection: "column", gap: "6px", marginBottom: "8px" }}>
+                      {(!selectedTask.attachments || selectedTask.attachments.length === 0) ? (
+                        <div style={{ color: "var(--text-muted)", fontStyle: "italic", fontSize: "0.75rem" }}>No file attachments yet</div>
+                      ) : (
+                        selectedTask.attachments.map((att) => (
+                          <div key={att.id || att.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px", background: "rgba(255,255,255,0.03)", borderRadius: "4px", border: "1px solid var(--border-color)" }}>
+                            <a href={att.url || "#"} target="_blank" rel="noreferrer" style={{ color: "var(--accent-gold)", textDecoration: "underline", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "160px" }}>
+                              {att.original_name || att.name || "Attachment"}
+                            </a>
+                            <span style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>{att.size_bytes ? `${Math.round(att.size_bytes / 1024)}KB` : "File"}</span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    <label className="btn btn-secondary" style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "0.8rem", cursor: "pointer" }}>
+                      <UploadCloud size={14} /> Upload File
+                      <input 
+                        type="file" 
+                        style={{ display: "none" }} 
+                        onChange={async (e) => {
+                          const file = e.target.files[0];
+                          if (!file) return;
+                          try {
+                            const newAtt = await uploadAttachment(selectedTask.id, file);
+                            const updatedAtts = [...(selectedTask.attachments || []), newAtt];
+                            updateTask(selectedTask.id, { attachments: updatedAtts });
+                            setSelectedTask({ ...selectedTask, attachments: updatedAtts });
+                            addNotificationLog("attachment_uploaded", `Uploaded ${file.name} to Task #${selectedTask.id}`);
+                          } catch (err) {
+                            alert(err.message || "Failed to upload file attachment");
+                          }
+                        }}
+                      />
+                    </label>
                   </div>
 
                   {currentRole === "Developer" ? (

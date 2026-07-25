@@ -1,27 +1,27 @@
 # CloudBoard
 
-A full-stack engineering management platform built with **Vite + React** on the frontend and **FastAPI + SQLite** on the backend. Designed with a premium charcoal & gold UI, this platform demonstrates how to build robust CRUD interfaces integrated with AI-driven workflows.
+A full-stack engineering intelligence & project management platform built with **Vite + React** on the frontend and **FastAPI + SQLAlchemy** on the backend. Designed with a premium charcoal & gold UI, this platform features real-time collaboration, file attachments, AI assistance, full-text search, role-based access control (RBAC), and system observability with Prometheus metrics.
 
-## Features
+## Key Features & Modules
 
-- **Full-Stack Kanban Board:** Drag-and-drop tasks across columns. State is persisted in a relational database (SQLite) via a FastAPI REST API.
-- **Dashboard & Analytics:** Visualizes project health, developer workload, and sprint progress using Recharts.
-- **AI Co-Pilot (Gemini):** Frontend-integrated AI heuristics for task estimation and duplicate detection. Gracefully degrades to local mock data if no API key is provided.
-- **Role-Based Access Control (RBAC):** Simulated frontend settings panel for user roles (Owner, Manager, Developer).
-- **Backend Architecture:** A FastAPI foundation built with SQLAlchemy ORM, Pydantic schemas, and JWT authentication scaffolds.
+- **WebSocket Real-time Collaboration (Module 8):** Live task updates, status sync, user presence indicators, and activity broadcasting across connected clients via WebSockets (`/ws/live`).
+- **File Storage & Attachment Service (Module 9):** Task file attachment uploads, validation, download links, and static asset serving (`/api/v1/attachments`).
+- **System Admin & Observability (Modules 10, 11 & 12):** Production-grade health checks (`/api/v1/system/health`), Prometheus telemetry exporter (`/api/v1/system/metrics`), and centralized audit log streaming.
+- **Global Search Service (Module 6):** Full-text tsvector and semantic search across tasks, projects, organizations, and team members with instant navigation (`/api/v1/search`).
+- **Full-Stack Kanban Board & Workflows:** Drag-and-drop task management, sprint tracking, and subtasks.
+- **AI Co-Pilot (Gemini - Module 5):** Automated task estimation, duplicate task detection, subtask generation, and blocker predictions.
+- **Role-Based Access Control (RBAC):** Granular user permissions (Owner, Admin, Manager, Developer, Viewer).
+- **Analytics & Dashboards:** Workload distribution, burndown charts, velocity tracking, and health metrics powered by Recharts.
 
 ## Tech Stack
 
-- **Frontend:** React, Vite, CSS (Charcoal & Gold theme), Lucide Icons, Recharts.
-- **Backend:** Python, FastAPI, SQLAlchemy, SQLite (Development).
+- **Frontend:** React, Vite, Tailwind/Vanilla CSS (Charcoal & Gold theme), Lucide Icons, Recharts, WebSocket client.
+- **Backend:** Python, FastAPI, SQLAlchemy, Alembic Migrations, AsyncPG / SQLite, WebSockets, Passlib (Argon2), PyJWT, Prometheus Exporter.
+- **DevOps & Infrastructure:** Docker, Docker Compose, GitHub Actions CI/CD pipeline, Nginx.
 
 ## Development Setup
 
-To run this project locally, you will need to start both the frontend development server and the backend API server.
-
 ### 1. Backend (FastAPI)
-
-Requires Python 3.10+.
 
 ```bash
 cd backend
@@ -29,14 +29,11 @@ python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 
-# Start the FastAPI server (runs on http://127.0.0.1:8000)
-uvicorn app.main:app --reload
+# Start the FastAPI server (runs on http://127.0.0.1:8005)
+uvicorn app.main:app --reload --port 8005
 ```
-*Note: The SQLite database (`cloudboard.db`) and tables will be created automatically on the first run.*
 
 ### 2. Frontend (React/Vite)
-
-Requires Node.js 18+.
 
 ```bash
 # From the project root
@@ -46,21 +43,13 @@ npm install
 npm run dev
 ```
 
-### 3. Environment Variables (Optional)
-To enable real AI integration on the frontend, create a `.env` file in the root directory (or expose it in your environment):
-```
-VITE_GEMINI_API_KEY=your_gemini_api_key_here
-```
+### 3. API Documentation & Telemetry
 
-## Project Structure
-
-- `/src`: React frontend application.
-  - `/components`: Dashboard, KanbanBoard, Analytics, etc.
-  - `/lib`: API client (`api.js`) and AI integration (`gemini.js`).
-- `/backend`: FastAPI application.
-  - `/app/models`: SQLAlchemy ORM models (Task, User, Organization).
-  - `/app/routers`: REST endpoints.
-- `docker-compose.yml` & `Dockerfile`: Infrastructure scaffolding for future production deployments.
+- **Swagger API Docs:** `http://localhost:8005/docs`
+- **Health Check:** `http://localhost:8005/api/v1/system/health`
+- **Prometheus Metrics:** `http://localhost:8005/api/v1/system/metrics`
+- **WebSocket Endpoint:** `ws://localhost:8005/ws/live`
 
 ## License
+
 MIT © 2026 Sara

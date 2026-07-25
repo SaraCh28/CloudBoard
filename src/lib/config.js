@@ -12,8 +12,7 @@
  */
 export function getGeminiApiKey() {
   // Vite injects env vars prefixed with VITE_ at build time.
-  // eslint-disable-next-line no-undef
-  const envKey = typeof import !== "undefined" && import.meta && import.meta.env && import.meta.env.VITE_GEMINI_API_KEY;
+  const envKey = typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_GEMINI_API_KEY;
   if (envKey) {
     return envKey;
   }
@@ -26,5 +25,5 @@ export function getGeminiApiKey() {
  */
 export const isProduction = () => {
   // Vite sets `import.meta.env.PROD` to true in production mode.
-  return typeof import !== "undefined" && import.meta && import.meta.env && import.meta.env.PROD;
+  return typeof import.meta !== "undefined" && import.meta.env && import.meta.env.PROD;
 };
