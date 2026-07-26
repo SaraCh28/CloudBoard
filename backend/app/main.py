@@ -13,14 +13,21 @@ from app.routers.auth import router as auth_router
 from app.routers.organizations import router as org_router
 from app.routers.tasks import router as tasks_router
 from app.routers.search import router as search_router
-from app.routers.websocket import router as websocket_router
+from app.routers.websocket import router as websocket_router, manager
 from app.routers.attachments import router as attachments_router
 from app.routers.system import router as system_router, record_request
+from app.routers.graphql import graphql_app
+from app.middleware.rate_limit import RateLimitMiddleware
+from app.middleware.security import SecurityHeadersMiddleware, CSRFMiddleware
 
-# Import all models so SQLAlchemy registers them
-from app.models import User, Organization, OrganizationMember, Invitation, Project, Task  # noqa: F401
+# Import all models so SQLAlchemy & Alembic register them
+from app.models import User, Organization, OrganizationMember, Invitation, Project, Task, AuditLog  # noqa: F401
 
 settings = get_settings()
+
+# ── Build metadata (injected by CI; fallback to dev values) ───────
+_BUILD_SHA = os.getenv("BUILD_SHA", "dev")
+_BUILD_TIME = os.getenv("BUILD_TIME", "local")
 
 
 @asynccontextmanager
@@ -33,21 +40,41 @@ async def lifespan(app: FastAPI):
     if settings.ENVIRONMENT == "development":
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+
     yield
-    # Shutdown: dispose engine
+
+    # ── Graceful shutdown ─────────────────────────────────────────
+    # Broadcast shutdown notice to all connected WebSocket clients
+    if manager.active_connections:
+        import asyncio
+        from starlette.websockets import WebSocketDisconnect
+
+        async def _close_ws(ws):
+            try:
+                await ws.send_json({"type": "server_shutdown", "message": "Server is restarting. Reconnect shortly."})
+                await ws.close(code=1001)
+            except Exception:
+                pass
+
+        await asyncio.gather(*[_close_ws(ws) for ws in list(manager.active_connections)], return_exceptions=True)
+
+    # Dispose SQLAlchemy connection pool
     await engine.dispose()
 
 
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    description="Engineering Intelligence Platform – Full Stack MVP (Auth, Projects, Real-time Collab, Attachments, Search & System Observability)",
+    description=(
+        "CloudBoard – Engineering Intelligence Platform. "
+        "Full Stack MVP: Auth, Projects, Real-time Collab, Attachments, Search & System Observability."
+    ),
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
 )
 
-# ── Middleware: Request Tracing & Timing ─────────────────────────
+# ── Middleware: Request Tracing & Timing ──────────────────────────
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
     request_id = str(uuid.uuid4())
@@ -65,7 +92,7 @@ async def add_process_time_header(request: Request, call_next):
     return response
 
 
-# ── CORS ─────────────────────────────────────────────────────────
+# ── CORS ──────────────────────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
@@ -74,20 +101,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ── Security & Rate Limiting ──────────────────────────────────────
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(CSRFMiddleware)
+app.add_middleware(RateLimitMiddleware, max_requests=120, window_seconds=60)
+
 # ── Static Uploads ────────────────────────────────────────────────
 uploads_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
 os.makedirs(uploads_dir, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 
-from app.routers.graphql import graphql_app
-from app.middleware.rate_limit import RateLimitMiddleware
-from app.middleware.security import SecurityHeadersMiddleware
-
-# ── Middleware: Security & Rate Limiting ─────────────────────────
-app.add_middleware(SecurityHeadersMiddleware)
-app.add_middleware(RateLimitMiddleware, max_requests=120, window_seconds=60)
-
-# ── Routers ──────────────────────────────────────────────────────
+# ── Routers ───────────────────────────────────────────────────────
 app.include_router(auth_router)
 app.include_router(org_router)
 app.include_router(tasks_router)
@@ -98,7 +122,7 @@ app.include_router(system_router)
 app.include_router(graphql_app, prefix="/graphql")
 
 
-# ── Health check ─────────────────────────────────────────────────
+# ── Health ────────────────────────────────────────────────────────
 @app.get("/health", tags=["System"])
 async def health_check():
     return {
@@ -109,3 +133,14 @@ async def health_check():
     }
 
 
+# ── Version ───────────────────────────────────────────────────────
+@app.get("/api/v1/version", tags=["System"])
+async def version():
+    """Return API version, build SHA, and environment metadata."""
+    return {
+        "version": settings.APP_VERSION,
+        "build_sha": _BUILD_SHA,
+        "build_time": _BUILD_TIME,
+        "environment": settings.ENVIRONMENT,
+        "api_prefix": "/api/v1",
+    }

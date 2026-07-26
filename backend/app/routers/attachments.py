@@ -4,12 +4,13 @@ Provides file upload, storage, listing, and validation for task assets.
 """
 
 from fastapi import APIRouter, File, UploadFile, HTTPException, status, Form
-from typing import List, Optional
+from typing import List, Optional, Dict
 import os
 import uuid
 import time
 import shutil
 from pydantic import BaseModel
+from app.middleware.security import validate_file_upload
 
 router = APIRouter(prefix="/api/v1/attachments", tags=["File Attachments"])
 
@@ -47,21 +48,24 @@ async def upload_attachment(
             detail=f"File extension '{ext}' is not allowed. Supported: {', '.join(ALLOWED_EXTENSIONS)}"
         )
 
+    # Read content first to get size
+    content = await file.read()
+    size_bytes = len(content)
+
+    # Module 16: Validate MIME type, extension, and size
+    ok, reason = validate_file_upload(
+        filename=file.filename,
+        content_type=file.content_type,
+        size_bytes=size_bytes,
+    )
+    if not ok:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=reason)
+
     attachment_id = f"att-{uuid.uuid4().hex[:8]}"
     safe_filename = f"{attachment_id}_{file.filename.replace(' ', '_')}"
     file_path = os.path.join(UPLOAD_DIR, safe_filename)
 
-    # Save file contents
-    size_bytes = 0
     with open(file_path, "wb") as buffer:
-        content = await file.read()
-        size_bytes = len(content)
-        if size_bytes > MAX_FILE_SIZE_BYTES:
-            os.remove(file_path)
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"File exceeds maximum size of {MAX_FILE_SIZE_BYTES // (1024 * 1024)}MB."
-            )
         buffer.write(content)
 
     attachment = {

@@ -61,9 +61,10 @@ class TaskResponse(TaskBase):
 
 # ── Routes ───────────────────────────────────────────────────────
 @router.get("", response_model=list[TaskResponse])
-async def list_tasks(db: AsyncSession = Depends(get_db)):
-    """Get all tasks."""
-    result = await db.execute(select(Task).order_by(Task.created_at.desc()))
+async def list_tasks(skip: int = 0, limit: int = 50, db: AsyncSession = Depends(get_db)):
+    """Get all tasks with offset pagination (skip & limit)."""
+    query = select(Task).order_by(Task.created_at.desc()).offset(skip).limit(limit)
+    result = await db.execute(query)
     tasks = result.scalars().all()
     # map assignee_id to assigneeId for frontend
     out = []

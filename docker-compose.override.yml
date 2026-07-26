@@ -1,0 +1,28 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# CloudBoard – docker-compose.override.yml  (Development overrides)
+#
+# This file is AUTOMATICALLY merged by Docker Compose when you run:
+#   docker-compose up
+#
+# Do NOT commit secrets into this file.
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  backend:
+    environment:
+      DEBUG: "true"
+      ENVIRONMENT: development
+      # Relaxed rate limit during local dev
+      RATE_LIMIT_MAX: "500"
+    volumes:
+      # Hot-reload: mount source into container
+      - ./backend:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  postgres:
+    ports:
+      - "5435:5432"   # Exposed for pgAdmin / DBeaver during dev
+
+  redis:
+    ports:
+      - "6381:6379"   # Exposed for redis-cli / RedisInsight during dev

@@ -23,7 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 
-# Python
+# Python & Testing
 __pycache__/
 *.py[cod]
 *.class
@@ -31,4 +31,8 @@ __pycache__/
 venv/
 ENV/
 env/
-
+.coverage
+htmlcov/
+*.db
+playwright-report/
+test-results/
