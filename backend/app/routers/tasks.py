@@ -53,10 +53,8 @@ class TaskUpdate(BaseModel):
 
 class TaskResponse(TaskBase):
     id: str
-    
-    class Config:
-        from_attributes = True
-        populate_by_name = True
+
+    model_config = {"from_attributes": True, "populate_by_name": True}
 
 
 # ── Routes ───────────────────────────────────────────────────────
@@ -105,7 +103,7 @@ async def create_task(body: TaskCreate, db: AsyncSession = Depends(get_db)):
     await db.commit()
     await db.refresh(task)
     
-    res = {**body.dict(), "assigneeId": task.assignee_id}
+    res = {**body.model_dump(), "assigneeId": task.assignee_id}
     return res
 
 
@@ -117,7 +115,7 @@ async def update_task(task_id: str, body: TaskUpdate, db: AsyncSession = Depends
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    update_data = body.dict(exclude_unset=True)
+    update_data = body.model_dump(exclude_unset=True)
     
     # Handle mapping assigneeId to assignee_id
     if "assigneeId" in update_data:
@@ -141,6 +139,28 @@ async def update_task(task_id: str, body: TaskUpdate, db: AsyncSession = Depends
         "subtasks": task.subtasks,
         "comments": task.comments,
         "assigneeId": task.assignee_id
+    }
+
+
+@router.get("/{task_id}", response_model=TaskResponse)
+async def get_task(task_id: str, db: AsyncSession = Depends(get_db)):
+    """Get a single task by ID."""
+    result = await db.execute(select(Task).where(Task.id == task_id))
+    task = result.scalar_one_or_none()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return {
+        "id": task.id,
+        "title": task.title,
+        "description": task.description,
+        "status": task.status,
+        "priority": task.priority,
+        "estimated_hours": task.estimated_hours,
+        "actual_hours": task.actual_hours,
+        "labels": task.labels,
+        "subtasks": task.subtasks,
+        "comments": task.comments,
+        "assigneeId": task.assignee_id,
     }
 
 

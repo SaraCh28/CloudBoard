@@ -22,10 +22,10 @@
  * Requires: npm run dev (frontend on :5173) + backend on :8005
  */
 
-const { test, expect, request } = require('@playwright/test');
+import { test, expect, request } from '@playwright/test';
 
-const BASE_URL = 'http://localhost:5173';
-const API_URL  = 'http://localhost:8005';
+const BASE_URL = 'http://127.0.0.1:5173';
+const API_URL  = 'http://127.0.0.1:8005';
 
 // ── UI Tests ───────────────────────────────────────────────────────
 

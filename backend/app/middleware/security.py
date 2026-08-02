@@ -64,15 +64,18 @@ _CSRF_SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 
 # Paths that are explicitly exempt (public webhooks, OAuth callbacks)
 _CSRF_EXEMPT_PREFIXES = (
-    "/api/v1/auth",         # Auth endpoints use Bearer tokens, not cookies
-    "/api/v1/auth/google",  # OAuth redirect – no cookie yet
+    "/api/v1/auth",          # Auth endpoints use Bearer tokens, not cookies
+    "/api/v1/auth/google",   # OAuth redirect – no cookie yet
     "/health",
-    "/graphql",            # Protected by Bearer token; CSRF less relevant
+    "/graphql",              # Protected by Bearer token; CSRF less relevant
     "/docs",
     "/redoc",
     "/openapi.json",
-    "/api/v1/tasks",       # Prototype: tasks are unauthenticated
-    "/api/v1/system/logs", # Admin endpoints
+    "/api/v1/tasks",         # Prototype: tasks are unauthenticated
+    "/api/v1/system",        # Admin & observability endpoints
+    "/api/v1/organizations", # Bearer-token protected; CSRF not applicable
+    "/api/v1/search",        # Bearer-token protected; CSRF not applicable
+    "/uploads",              # Static files
 )
 
 
